@@ -1,0 +1,142 @@
+# Import necessary libraries
+import os
+import shutil
+import requests
+import time
+import subprocess
+def monitor_system_health():
+    # Define thresholds
+    CPU_THRESHOLD = 80.0  # in percent
+    MEMORY_THRESHOLD = 80.0  # in percent
+    DISK_THRESHOLD = 80.0  # in percent
+
+    # Monitor CPU usage
+    try:
+        cpu_usage = os.getloadavg()[0] / os.cpu_count() * 100  # Approximation for CPU usage
+        if cpu_usage > CPU_THRESHOLD:
+            print(f"ALERT: High CPU usage detected: {cpu_usage:.2f}%")
+    except Exception as e:
+        print(f"ERROR: Unable to determine CPU usage. Error: {e}")
+
+    # Monitor Memory usage
+    try:
+        total_memory, used_memory, free_memory = shutil.disk_usage('/')
+        memory_usage_percent = (used_memory / total_memory) * 100
+        if memory_usage_percent > MEMORY_THRESHOLD:
+            print(f"ALERT: High Memory usage detected: {memory_usage_percent:.2f}%")
+    except Exception as e:
+        print(f"ERROR: Unable to determine memory usage. Error: {e}")
+
+    # Monitor Disk usage
+    try:
+        disk_usage = shutil.disk_usage('/')
+        disk_usage_percent = (disk_usage.used / disk_usage.total) * 100
+        if disk_usage_percent > DISK_THRESHOLD:
+            print(f"ALERT: High Disk usage detected: {disk_usage_percent:.2f}%")
+    except Exception as e:
+        print(f"ERROR: Unable to determine disk usage. Error: {e}")
+
+    # Monitor Running Processes
+    try:
+        process_count = len([name for name in os.listdir('/proc') if name.isdigit()])
+        print(f"INFO: Total number of running processes: {process_count}")
+    except Exception as e:
+        print(f"ERROR: Unable to count running processes. Error: {e}")
+
+# Application Health Checker
+def check_application_health(url):
+    try:
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            print(f"SUCCESS: Application is UP. HTTP Status Code: {response.status_code}")
+        else:
+            print(f"WARNING: Application is UP but returned a non-200 status code: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"ERROR: Application is DOWN. Error: {e}")
+
+# Automated Backup Solution
+def automated_backup(source_directory, backup_directory):
+    try:
+        if not os.path.exists(backup_directory):
+            os.makedirs(backup_directory)
+        backup_path = shutil.make_archive(
+            os.path.join(backup_directory, "backup"), "zip", source_directory
+        )
+        print(f"SUCCESS: Backup completed. File saved at: {backup_path}")
+    except Exception as e:
+        print(f"ERROR: Backup failed. Error: {e}")
+
+# Log File Analyzer
+def analyze_log_file(log_file_path):
+    try:
+        if not os.path.exists(log_file_path):
+            print(f"ERROR: Log file not found: {log_file_path}")
+            return
+
+        with open(log_file_path, 'r') as file:
+            logs = file.readlines()
+
+        # Analyze logs
+        total_requests = len(logs)
+        error_404_count = sum(1 for line in logs if " 404 " in line)
+        most_requested_page = None
+        request_counts = {}
+        for line in logs:
+            parts = line.split()
+            if len(parts) > 6:
+                page = parts[6]
+                request_counts[page] = request_counts.get(page, 0) + 1
+
+        most_requested_page = max(request_counts, key=request_counts.get, default="None")
+
+        print(f"INFO: Total requests: {total_requests}")
+        print(f"INFO: 404 errors: {error_404_count}")
+        print(f"INFO: Most requested page: {most_requested_page}")
+    except Exception as e:
+        print(f"ERROR: Log file analysis failed. Error: {e}")
+
+# Main script
+# Main script
+if __name__ == "__main__":
+    # System Health Monitoring
+    print("--- System Health Monitoring ---")
+    monitor_system_health()
+
+    # Application Health Checking
+    print("\n--- Application Health Checker ---")
+    application_url = "https://httpbin.org/status/200"  # Replace with the application URL
+    check_application_health(application_url)
+
+    # Automated Backup Solution
+    print("\n--- Automated Backup Solution ---")
+    source_dir = "./test_source"  # Replace with your source directory
+    backup_dir = "./test_backup"  # Replace with your backup directory
+
+    # Ensure source and backup directories exist
+    if not os.path.exists(source_dir):
+        os.makedirs(source_dir)
+        with open(os.path.join(source_dir, "file1.txt"), "w") as f:
+            f.write("Sample file 1.")
+        with open(os.path.join(source_dir, "file2.txt"), "w") as f:
+            f.write("Sample file 2.")
+
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir)
+
+    automated_backup(source_dir, backup_dir)
+
+    # Log File Analyzer
+    print("\n--- Log File Analyzer ---")
+    log_file = "./test_server.log"  # Replace with your log file path
+
+    # Create a mock log file for testing if it doesn't exist
+    if not os.path.exists(log_file):
+        with open(log_file, "w") as f:
+            f.write('127.0.0.1 - - [07/Jan/2025:10:30:21] "GET /index.html HTTP/1.1" 200 -\n')
+            f.write('127.0.0.1 - - [07/Jan/2025:10:31:15] "GET /about.html HTTP/1.1" 404 -\n')
+            f.write('127.0.0.1 - - [07/Jan/2025:10:32:10] "POST /login HTTP/1.1" 200 -\n')
+
+    analyze_log_file(log_file)
+
+    # Optionally, run periodically
+    # Uncomment the following lines to run the scripts periodically  output of the code
