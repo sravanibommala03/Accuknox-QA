@@ -1,7 +1,5 @@
 
 ## Dockerization
-1. **Clone the repository**
- git clone https://github.com/nyrahul/wisecow  
 
 2. **Write Dockerfile**:
     ```Dockerfile
